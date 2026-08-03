@@ -43,6 +43,8 @@ export interface ProxmoxResource {
   pid?: number;
   disks?: GuestDiskInfo[]; // from config endpoint, available even when stopped
   allocatedDisk?: number; // total allocated disk from config
+  lastDiskUsage?: number; // last known live disk usage (bytes), cached when running
+  lastDiskUsageTime?: number; // timestamp (ms) of last live disk reading
 }
 
 export interface ProxmoxStorage {

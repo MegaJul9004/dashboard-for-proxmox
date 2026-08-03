@@ -92,9 +92,11 @@ export function ResourceList({
                     <UsageBar used={pct(r.memory, r.maxmem)} total={100} color="bg-accent-500" height="h-1" />
                   </div>
                 </td>
-                <td className="px-3 py-3 hidden lg:table-cell text-[11px] text-ink-300 font-mono">
-                  {r.status === 'stopped' && r.allocatedDisk
-                    ? `${formatBytes(r.allocatedDisk)} alloc`
+                <td className="px-3 py-3 hidden lg:table-cell text-[11px] text-ink-300 font-mono" title={r.status === 'stopped' && r.lastDiskUsageTime ? `Last live reading: ${new Date(r.lastDiskUsageTime).toLocaleString()}` : undefined}>
+                  {r.status === 'stopped'
+                    ? (r.lastDiskUsage
+                        ? `${formatBytes(r.lastDiskUsage)}${r.allocatedDisk ? ` / ${formatBytes(r.allocatedDisk)}` : ''}`
+                        : (r.allocatedDisk ? `${formatBytes(r.allocatedDisk)} alloc` : '—'))
                     : formatBytes(r.disk)}
                 </td>
                 <td className="px-3 py-3 hidden lg:table-cell text-[11px] text-ink-300 font-mono">

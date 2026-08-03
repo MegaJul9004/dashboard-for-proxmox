@@ -68,7 +68,15 @@ export function ResourceCard({
           <Gauge
             label="DISK"
             value={diskPct / 100}
-            sub={resource.status === 'stopped' && resource.allocatedDisk ? `${formatBytes(resource.allocatedDisk)} alloc` : formatBytes(resource.disk)}
+            sub={
+              resource.status === 'stopped'
+                ? (resource.lastDiskUsage
+                    ? `${formatBytes(resource.lastDiskUsage)} used`
+                    : resource.allocatedDisk
+                      ? `${formatBytes(resource.allocatedDisk)} alloc`
+                      : '—')
+                : formatBytes(resource.disk)
+            }
             color="#10b981"
           />
         </div>

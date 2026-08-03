@@ -85,7 +85,15 @@ export function ResourceDrawer({
             </div>
             <div className="panel p-4 flex flex-col items-center">
               <RadialGauge value={diskPct / 100} size={64} stroke={5} color="#10b981" label="DISK" />
-              <span className="text-[11px] text-ink-400 mt-2">{resource.status === 'stopped' && resource.allocatedDisk ? `${formatBytes(resource.allocatedDisk)} alloc` : formatBytes(resource.disk)}</span>
+              <span className="text-[11px] text-ink-400 mt-2">
+                {resource.status === 'stopped'
+                  ? (resource.lastDiskUsage
+                      ? `${formatBytes(resource.lastDiskUsage)} used`
+                      : resource.allocatedDisk
+                        ? `${formatBytes(resource.allocatedDisk)} alloc`
+                        : '—')
+                  : formatBytes(resource.disk)}
+              </span>
             </div>
           </div>
 
@@ -105,7 +113,7 @@ export function ResourceDrawer({
             <h3 className="text-xs uppercase tracking-wide text-ink-400 font-medium">Resource Usage</h3>
             <UsageRow icon={Cpu} label="CPU" value={`${Math.round(cpuPct)}%`} detail={`${resource.cpus} / cores`} p={cpuPct} color="bg-brand-500" />
             <UsageRow icon={MemoryStick} label="Memory" value={`${formatBytes(resource.memory)} / ${formatBytes(resource.maxmem)}`} detail={`${memPct.toFixed(1)}%`} p={memPct} color="bg-accent-500" />
-            <UsageRow icon={HardDrive} label="Disk" value={resource.status === 'stopped' && resource.allocatedDisk ? `${formatBytes(resource.allocatedDisk)} allocated` : `${formatBytes(resource.disk)} / ${formatBytes(resource.maxdisk)}`} detail={`${diskPct.toFixed(1)}%`} p={diskPct} color="bg-success-500" />
+            <UsageRow icon={HardDrive} label="Disk" value={resource.status === 'stopped' ? (resource.lastDiskUsage ? `${formatBytes(resource.lastDiskUsage)} used (cached)` : resource.allocatedDisk ? `${formatBytes(resource.allocatedDisk)} allocated` : '—') : `${formatBytes(resource.disk)} / ${formatBytes(resource.maxdisk)}`} detail={`${diskPct.toFixed(1)}%`} p={diskPct} color="bg-success-500" />
           </div>
 
           {/* Disk breakdown from config */}
@@ -122,6 +130,15 @@ export function ResourceDrawer({
                   <span className="font-mono text-xs text-ink-100">{formatBytes(d.size)}</span>
                 </div>
               ))}
+            </div>
+          )}
+
+          {resource.status === 'stopped' && resource.lastDiskUsageTime && (
+            <div className="panel p-4">
+              <div className="flex items-center gap-2 text-xs text-ink-400">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Last live disk reading: {new Date(resource.lastDiskUsageTime).toLocaleString()}</span>
+              </div>
             </div>
           )}
 

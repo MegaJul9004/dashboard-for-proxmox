@@ -82,7 +82,7 @@ export async function fetchResources(): Promise<ProxmoxResource[]> {
     diskwrite: r.diskwrite ?? 0,
     tags: r.tags,
     pid: r.pid,
-  }));
+  })).sort((a, b) => a.vmid - b.vmid);
 }
 
 export async function fetchStorage(): Promise<ProxmoxStorage[]> {
@@ -96,7 +96,7 @@ export async function fetchStorage(): Promise<ProxmoxStorage[]> {
     used: s.used ?? 0,
     total: s.maxdisk ?? s.total ?? 0,
     active: s.active ?? 0,
-  }));
+  })).sort((a, b) => a.node.localeCompare(b.node) || a.storage.localeCompare(b.storage));
 }
 
 export async function fetchNodeStorageList(node: string): Promise<ProxmoxStorage[]> {

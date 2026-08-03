@@ -57,10 +57,10 @@ function StorageCard({ storage, resources }: { storage: ProxmoxStorage; resource
   const tone = p > 85 ? 'danger' : p > 65 ? 'warn' : 'success';
   const barColor = tone === 'danger' ? 'bg-danger-500' : tone === 'warn' ? 'bg-warn-500' : 'bg-success-500';
 
-  // Find guests whose disks are on this storage
-  const guestsOnStorage = resources.filter((r) =>
-    r.node === storage.node && r.disks?.some((d) => d.storage === storage.storage),
-  );
+  // Find guests whose disks are on this storage (stable sort by vmid)
+  const guestsOnStorage = resources
+    .filter((r) => r.node === storage.node && r.disks?.some((d) => d.storage === storage.storage))
+    .sort((a, b) => a.vmid - b.vmid);
   const allocatedByGuests = guestsOnStorage.reduce((sum, r) => {
     const onThisStorage = (r.disks ?? []).filter((d) => d.storage === storage.storage).reduce((s, d) => s + d.size, 0);
     return sum + onThisStorage;
@@ -106,6 +106,18 @@ function StorageCard({ storage, resources }: { storage: ProxmoxStorage; resource
           <div className="rounded-lg bg-ink-900/40 p-2">
             <div className="text-[10px] uppercase text-ink-400">Guests</div>
             <div className="text-xs font-mono font-semibold text-ink-100">{guestsOnStorage.length}</div>
+          </div>
+        </div>
+
+        {/* Free space bar visualization */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[10px] text-ink-400 mb-1">
+            <span>Used {p.toFixed(1)}%</span>
+            <span>Free {(100 - p).toFixed(1)}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-ink-700/60 overflow-hidden flex">
+            <div className={`${barColor} h-full transition-all duration-500`} style={{ width: `${p}%` }} />
+            <div className="bg-ink-600/40 h-full flex-1" />
           </div>
         </div>
 

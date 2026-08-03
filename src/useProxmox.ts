@@ -15,6 +15,25 @@ import {
 
 const PROXMOX_URL = import.meta.env.VITE_PROXMOX_URL as string | undefined;
 
+const DISK_CACHE_KEY = 'pve-disk-usage-cache';
+
+function loadDiskCache(): Record<number, { usage: number; time: number }> {
+  try {
+    const raw = localStorage.getItem(DISK_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDiskCache(cache: Record<number, { usage: number; time: number }>) {
+  try {
+    localStorage.setItem(DISK_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // storage might be full or unavailable
+  }
+}
+
 export function useProxmox() {
   const [state, setState] = useState<ProxmoxState>(emptyState);
   const [polling, setPolling] = useState(true);
@@ -38,7 +57,30 @@ export function useProxmox() {
       setState((s) => ({ ...s, status: s.status === 'connected' ? 'connected' : 'connecting' }));
       const data = await fetchAll();
 
-      // For stopped LXC containers, fetch their config to get allocated disk info
+      // Cache live disk usage for running guests and merge cached values for stopped ones
+      const diskCache = loadDiskCache();
+      const now = Date.now();
+      for (const r of data.resources) {
+        if (r.status === 'running' && r.disk > 0) {
+          diskCache[r.vmid] = { usage: r.disk, time: now };
+        }
+      }
+      saveDiskCache(diskCache);
+
+      // Merge cached disk usage into all resources
+      data.resources = data.resources.map((r) => {
+        const cached = diskCache[r.vmid];
+        if (cached) {
+          return {
+            ...r,
+            lastDiskUsage: cached.usage,
+            lastDiskUsageTime: cached.time,
+            // For stopped guests, use cached live usage as current disk if available
+            disk: r.status === 'stopped' ? cached.usage : r.disk,
+          };
+        }
+        return r;
+      });
       const stoppedLxcs = data.resources.filter((r) => r.type === 'lxc' && r.status === 'stopped');
       if (stoppedLxcs.length > 0 && stoppedLxcs.length <= 20) {
         const configs = await Promise.all(
